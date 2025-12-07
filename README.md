@@ -13,3 +13,8 @@ Once all your requirements are installed (see above section) and you're in the d
 ```bash
 python3 mediacontrols.py
 ```
+And in a web browser go to
+```
+localhost:7337
+```
+Or any preferred IP, port is still 7337 unless you change it.
