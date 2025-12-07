@@ -65,33 +65,48 @@ def index():
     return render_template_string('''
 <!DOCTYPE html>
 <html><head><title>Remote Media Control</title>
-<style>body{font-family:sans-serif;text-align:center;padding:50px;}
-button{font-size:24px;padding:20px 40px;margin:10px;background:#007cba;color:white;border:none;border-radius:8px;cursor:pointer;}
-button:hover{background:#005a87;}
-.mute{background:#dc3545;}
-.mute:hover{background:#c82333;}
-input{font-size:20px;padding:15px;width:100px;margin:10px;}</style></head>
+<style>
+body {font-family:sans-serif;text-align:center;padding:50px;}
+button {font-size:24px;padding:20px 40px;margin:10px;background:#007cba;color:white;border:none;border-radius:8px;cursor:pointer;}
+button:hover {background:#005a87;}
+.mute {background:#dc3545;}
+.mute:hover {background:#c82333;}
+input {font-size:20px;padding:15px;width:100px;margin:10px;}
+.controls {display:flex;justify-content:center;align-items:center;gap:20px;margin-bottom:20px;}
+</style></head>
 <body>
 <h1>Remote Media Controls</h1>
-<button onclick="send('/play-pause')">⏯ Play/Pause</button><br>
+
+<div class="controls">
+  <button onclick="send('/previous')">⏮</button>
+  <button onclick="send('/play-pause')">⏯</button>
+  <button onclick="send('/next')">⏭</button>
+</div>
+
 <button onclick="send('/volume-up')">Vol +5</button>
 <button onclick="send('/volume-down')">Vol -5</button>
-<button id="muteBtn" onclick="send('/mute')">Mute</button>
-<br><input id="vol" type="number" min="0" max="100" step="5" value="50">
+<button class="mute" id="muteBtn" onclick="send('/mute')">Mute</button>
+<br>
+<input id="vol" type="number" min="0" max="100" step="5" value="50">
 <button onclick="setVol()">Set Volume</button>
 <div id="status"></div>
+
 <script>
 function send(cmd){
-  fetch(cmd).then(r=>r.text()).then(t=>document.getElementById('status').innerHTML=t);
+  fetch(cmd)
+    .then(r=>r.text())
+    .then(t=>document.getElementById('status').innerHTML=t);
 }
 function setVol(){
   let vol=document.getElementById('vol').value;
   if(!/^(0|5|10|15|20|25|30|35|40|45|50|55|60|65|70|75|80|85|90|95|100)$/.test(vol)){
-    document.getElementById('status').innerHTML='<span style="color:red">Must be 0-100 ending in 0 or 5</span>'; return;
+    document.getElementById('status').innerHTML='<span style="color:red">Must be 0-100 ending in 0 or 5</span>'; 
+    return;
   }
   send('/set-volume?vol='+vol);
 }
-</script></body></html>''')
+</script>
+</body></html>''')
 
 @app.route('/play-pause')
 def play_pause():
@@ -143,6 +158,16 @@ def mute_toggle():
             executor.submit(run_pactl_nonblock, '0%')
             is_muted = True
             return f'<span style="color:orange">Muted (was {previous_volume}%)</span>'
+@app.route('/next')
+def next_track():
+    executor.submit(subprocess.run, ['playerctl', 'next'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return 'OK - Next track'
+
+@app.route('/previous')
+def previous_track():
+    executor.submit(subprocess.run, ['playerctl', 'previous'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return 'OK - Previous track'
+
 
 if __name__ == '__main__':
     print("Running")
